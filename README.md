@@ -44,7 +44,7 @@ The example problem considered here, used a 3 mm spherical indenter to apply an 
 
 ![alt text][example]
 
-[example](https://github.com/Franciena/InverseMatMarc/tree/master/pictures/sph_mid.png)
+[example]: https://github.com/Franciena/InverseMatMarc/tree/master/pictures/sph_mid.png
 
 The exact material properties for the "Experimental" model was thus known as:
 | Parameter | Value |
