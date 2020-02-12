@@ -16,23 +16,23 @@ This project was setup to work with Windows. The DOT optimisation library is req
 ## File description
 | File         | Description         |
 |:-------------|:--------------------|
-|functions.py  | The file that contains all the written functions used to create files and save data for later access.|
-|dot11.py      | The Python wrapper for DOT, but edited for use within the pipeline.|
-|File_paths.py | The file that contains all the file paths needed within the pipeline to access and save the different files and data created. |
-|graphs.py     | The final example post file used to create graphs from the results obtained after optimisation. Optional file. |
-|LHC.py        | The file containing the Latent Hypercube (LHC) function specifically for this pipeline. |
-|main_code.py  | The file that contains the main code from where all of the other files are called and the whole pipeline is controlled from. This is the main file to run within Python. |
-|RBF.py        | The file that does the necessary post processing of interpolating the data such that the objective function can be created.|
-|RMS.py        | The file that calculates the Root Mean Square (RMS) which is used as the objective function. |
-|RSQ.py        | The file that calculates the R^2 error between the data sets for the graphs.py file. Optional file, but required if graphs.py is used. |
-|SEOE.py       | The file that calculates the Standard Error of Estimation for the results. Optional file, but is required if graphs.py is used. |
-|sym_test_fem_job1.dat | The input file from the Numerical model for the example. |
-|sym_test_exp_job1.dat | The input file from the Experimental model for the example. |
-|sym_test_fem_job1.t16 | The output file from the Numerical model for the example. |
-|sym_test_exp_job1.t16 | The output file from the Experimental model for the example. |
-|sym_test_fem_job1.sts | The Status file from the Numerical model. Used to determine the EXIT CODE. |
-|sym_test_fem.mud      | The FE model for the Numerical model for the example. |
-|sym_test_exp.mud      | The FE model for the Experimental model for the example. |
+|[functions.py](https://github.com/Franciena/InverseMatMarc/blob/master/functions.py)  | The file that contains all the written functions used to create files and save data for later access.|
+|[dot11.py](https://github.com/Franciena/InverseMatMarc/blob/master/dot11.py)      | The Python wrapper for DOT, but edited for use within the pipeline.|
+|[File_paths.py](https://github.com/Franciena/InverseMatMarc/blob/master/File_paths.py) | The file that contains all the file paths needed within the pipeline to access and save the different files and data created. |
+|[graphs.py](https://github.com/Franciena/InverseMatMarc/blob/master/graphs.py)     | The final example post file used to create graphs from the results obtained after optimisation. Optional file. |
+|[LHC.py](https://github.com/Franciena/InverseMatMarc/blob/master/LHC.py)        | The file containing the Latent Hypercube (LHC) function specifically for this pipeline. |
+|[main_code.py](https://github.com/Franciena/InverseMatMarc/blob/master/main_code.py)  | The file that contains the main code from where all of the other files are called and the whole pipeline is controlled from. This is the main file to run within Python. |
+|[RBF.py](https://github.com/Franciena/InverseMatMarc/blob/master/RBF.py)        | The file that does the necessary post processing of interpolating the data such that the objective function can be created.|
+|[RMS.py](https://github.com/Franciena/InverseMatMarc/blob/master/RMS.py)        | The file that calculates the Root Mean Square (RMS) which is used as the objective function. |
+|[RSQ.py](https://github.com/Franciena/InverseMatMarc/blob/master/RSQ.py)        | The file that calculates the R^2 error between the data sets for the graphs.py file. Optional file, but required if graphs.py is used. |
+|[SEOE.py](https://github.com/Franciena/InverseMatMarc/blob/master/SEOE.py)       | The file that calculates the Standard Error of Estimation for the results. Optional file, but is required if graphs.py is used. |
+|[sym_test_fem_job1.dat](https://github.com/Franciena/InverseMatMarc/blob/master/sph_mid/sym_test_fem_job1.dat) | The input file from the Numerical model for the example. |
+|[sym_test_exp_job1.dat](https://github.com/Franciena/InverseMatMarc/blob/master/sph_mid/sym_test_exp_job1.dat) | The input file from the Experimental model for the example. |
+|[sym_test_fem_job1.t16](https://github.com/Franciena/InverseMatMarc/blob/master/sph_mid/sym_test_fem_job1.t16) | The output file from the Numerical model for the example. |
+|[sym_test_exp_job1.t16](https://github.com/Franciena/InverseMatMarc/blob/master/sph_mid/sym_test_exp_job1.t16.mud) | The output file from the Experimental model for the example. |
+|[sym_test_fem_job1.sts](https://github.com/Franciena/InverseMatMarc/blob/master/sph_mid/sym_test_fem_job1.sts) | The Status file from the Numerical model. Used to determine the EXIT CODE. |
+|[sym_test_fem.mud](https://github.com/Franciena/InverseMatMarc/blob/master/sph_mid/sym_test_fem.mud)      | The FE model for the Numerical model for the example. |
+|[sym_test_exp.mud](https://github.com/Franciena/InverseMatMarc/blob/master/sph_mid/sym_test_exp.mud)      | The FE model for the Experimental model for the example. |
 
 ## Example problem
 This Numerical pipeline was created as part of a Master's thesis. The aim of the project was to investigate if micro-indentation can characterise soft materials. Two FE models were used for the investigation. It was not known if the indentation method would work and hence the use of two FE models instead of a physical experiment and one FE model. Both FE models were thus modelled using the same testing conditions, but with minor changes explained further. The main goal behind the two FE models were that one model represents DIC data, the "Experimental" model, which used a constant Mooney-Rivlin three parameter material model. The second FE model, the "Numerical" model, is the model used and within the inverse FE analysis and the material model here was changed and optimised during the optimisation procedure to determine the feasibility of the indentation method by comparing the displacement results. 
