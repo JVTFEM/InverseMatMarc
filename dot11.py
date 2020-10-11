@@ -22,7 +22,7 @@ import time
 from File_paths import filepaths
 
 class dot:
-
+	
 	#Set some local constants
 	nInfo 	= 0
 	nMethod = 0
@@ -132,7 +132,7 @@ class dot:
 				final_points(xf)	# store the optimised point in a separate file
 				time.sleep(1)
 
-				from functions import material2d, material3d, material3d_ogden
+				from functions import material2d, material3d#, material3d_ogden
 				if len(X)==3:
 					material3d(xa)	# Create new procedure file for the optimised point
 				elif len(X)==2:
@@ -140,7 +140,9 @@ class dot:
 
 				time.sleep(1)
 				filem = "mat.proc"
-				p = subprocess.Popen(["mentat.bat",filem], bufsize=2048)  # Start MSC Marc and load the procedure 
+				from code_settings import pipeline_files
+				pf = pipeline_files()
+				p = subprocess.Popen([filepaths(pf.mentat_version),filem], bufsize=2048)  # Start MSC Marc and load the procedure 
 				# file which will open the correct NUMERICAL model and change the material properties, start Marc 
 				# solver and to save the post file for the current DOT increment, close Marc and continue with the 
 				# code below

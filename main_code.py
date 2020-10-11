@@ -34,6 +34,8 @@ import sys
 import time
 from functions import material2d, material3d
 from File_paths import filepaths
+from code_settings import pipeline_files
+pf = pipeline_files()
 # ------------------------------------------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------------------------------------------
@@ -43,7 +45,8 @@ from File_paths import filepaths
 #   - if the MARC analysis converged, g[0] = -1
 #   - if the MARC analysis didn't converge, g[0] = 1
 def myEvaluate(x, obj, g, param):
-    # //
+    #Select which Marc Mentat version to use for the analysis
+    mentat_version = filepaths(pf.mentat_version)
     # Since 10 deisgn points will be optimised, the optimser need to know which design point's 
     # optimisation is currently running, the "iterations" file store the current design point's 
     # number, zero indexed.
@@ -96,7 +99,7 @@ def myEvaluate(x, obj, g, param):
     # the code until MARC is closed.
     time.sleep(1)
     filem = "mat.proc"
-    p = subprocess.Popen(["mentat.bat",filem], bufsize=2048)  #start MARC and load the procedure file 
+    p = subprocess.Popen([mentat_version,filem], bufsize=2048)  #start MARC and load the procedure file 
     # which will open the correct FE model and change the material properties, start MARC solver and 
     # to save the post file for the current DOT increment, close MARC and continue with the code below
     p.wait()

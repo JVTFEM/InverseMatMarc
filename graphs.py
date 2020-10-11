@@ -127,8 +127,14 @@ def post_process(dm,*args):
     for k in range(it+1):               # Loop to calculate each optimisation run's results, errors and graphs
         fname1 = "RBF_data%s.npy"%k     # Import the saved "NUM" results, after interpolation
         fname2 = "exp_data%s.npy"%k     # Import the "EXP" results
-        filepath1 = os.path.join(path1,fname1)
-        filepath2 = os.path.join(path1,fname2)
+
+        if '/' in path1:
+            filepath1 = path1 + '/' + fname1
+            filepath2 = path1 + '/' + fname2
+        else:    
+            filepath1 = os.path.join(path1,fname1)
+            filepath2 = os.path.join(path1,fname2)
+
         RBFdata = np.load(filepath1)
         expdata = np.load(filepath2)
         der = expdata[:,:,dm:(dm*2)]    # The first few columns are the coordinates, the next few are the displacements
@@ -339,19 +345,20 @@ def post_process(dm,*args):
         # at full deformation  
         inc = incn-1
 
-        x_new = expdata[inc,:,0]
+        x_new = expdata[inc,:,0]    
         y_new = expdata[inc,:,1]
         dx_new = expdata[inc,:,3]
         dy_new = expdata[inc,:,4]
         z_new = expdata[inc,:,2]
         dz_new = expdata[inc,:,5]
-        x_rbf = RBFdata[inc,:,0]
-        y_rbf = RBFdata[inc,:,1]
-        z_rbf = RBFdata[inc,:,2]
-        orgx = expdata[0,:,0]
-        orgy = expdata[0,:,1]
-        px = orgx + x_rbf
-        py = orgy + y_rbf
+        #Handling the numerical data
+        x_rbf = RBFdata[inc,:,0] #displacement num node positions x (undeformed)
+        y_rbf = RBFdata[inc,:,1] #displacement num node positions y (undeformed)
+        z_rbf = RBFdata[inc,:,2] #displacement num node positions z (undeformed)
+        orgx = expdata[0,:,0] #undeformed num node positions x (undeformed)
+        orgy = expdata[0,:,1] #undeformed num node positions y (undeformed)
+        px = orgx + x_rbf #deformed num node positions x (undeformed)
+        py = orgy + y_rbf #deformed num node positions y (undeformed)
         # //
 
         # // The eng stress and stretch is determined for the increment
@@ -402,9 +409,9 @@ def post_process(dm,*args):
         plt.figure(fn, figsize=(15.0,8.5))
         plt.figure(fn).legend(handles=[pll.Line2D([0], [0], marker='o', color='w', label='EXP Model Original Nodal Position', markerfacecolor='g', markersize=5),pll.Line2D([0], [0], marker='o', color='w', label='EXP Model Deformed Nodal Points', markerfacecolor='r', markersize=5),pll.Line2D([0], [0], marker='o', color='b', label='NUM Model Deformed Nodal Points', markerfacecolor='w', markersize=5)], loc = 'center')
         plt.subplot(221)
-        plt.plot(orgx,orgy,'g.')
-        plt.plot(x_new, y_new, 'r.')
-        plt.plot(px,py, 'bo', fillstyle="none")
+        plt.plot(orgx,orgy,'g.')                    #original node positions (undeformed)
+        plt.plot(x_new, y_new, 'r.')                #deformed exp node positions (undeformed)
+        plt.plot(px,py, 'bo', fillstyle="none")     #deformed num node positions (undeformed)
         plt.xlabel('X-Coordinate [mm]',fontsize=18)
         plt.ylabel('Y-Coordinate [mm]',fontsize=18)
         plt.grid("on")

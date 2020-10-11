@@ -96,6 +96,8 @@ def material3d(x):
         c.write(m1)
         c.write(m2)
         c.write(m3)
+        c.write('*model_orientation_iso1\n')
+        c.write('identify_contact *redraw\n')
         c.write('*edit_job job1\n')
         c.write('*update_job\n')
         c.write('*save_model\n')
@@ -164,20 +166,20 @@ def expdata(ce,de,fvr,nne,*args):
         it = int(file.readline())
         file.close
         
-        filen = "exp_data%s.npy"%it
-        filen1 = "RBF_data%s.npy"%it
+        exp_data_File = "exp_data%s.npy"%it
+        RBF_data_File = "RBF_data%s.npy"%it
         path1 = filepaths("path1")
 
     elif len(args)>0:
         it = 0
-        filen = "exp_data%s.npy"%it         # "ce", "de" and "stot" is saved to this file
-        filen1 = "RBF_data%s.npy"%it        # "fvr" is saved to this file
+        exp_data_File = "exp_data%s.npy"%it         # "ce", "de" and "stot" is saved to this file
+        RBF_data_File = "RBF_data%s.npy"%it         # "fvr" is saved to this file
         pat = filepaths("path1")
         fl = args[0]
         path1 = os.path.join(pat,fl)
 
-    filepath = os.path.join(path1,filen)
-    filepath1 = os.path.join(path1,filen1)
+    filepath  = os.path.join(path1,exp_data_File)
+    filepath1 = os.path.join(path1,RBF_data_File)
     if not os.path.exists(path1):
         os.makedirs(path1)
     
@@ -313,5 +315,237 @@ def objectfunc(obj,ite):
 
     np.save(objpat,obj)
     np.save(iterpat,ite)
-# //
+
+
+
+
+#this function performs the task of extracting the node numbers as reference numbers for both the .t16 and .dat files
+def read_dat_node_number(dat_file,t_16_file,start_row,end_row):
+    import pandas as pd
+    t_16_file.moveto(1)
+    datf_nm  = pd.read_csv(dat_file,header=None, names=list(range(27)), skipinitialspace=True, sep=' ', keep_default_na=False)
+    #determine search bounds
+    start_row  = datf_nm.index[datf_nm.iloc[:,3] == start_row][0] + 3 #determine row position with tracking surface nodes using membrane's name
+    end_row    = datf_nm.index[datf_nm.iloc[:,0] == end_row][0] + 2 #determine row position where the node number for membrane are no longer listed
+    n_rows = end_row - start_row    #determine the number of rows where the membrane nodes are listed
+    #get node data
+    nodef  = pd.read_csv(dat_file,header=None, skiprows= range(start_row), nrows = n_rows, skipinitialspace=True, sep=' ', keep_default_na=False)
+    nodef_list_flat = list(filter(('c').__ne__,[item for sublist in nodef.values.tolist() for item in sublist])) #filter out all instances of 'c'
+    nodef_list_flat = list(filter(('').__ne__,nodef_list_flat)) #filter out all instances of ''
+
+    node_numbers = [int(item) for item in nodef_list_flat]  #ensure all entires of list are integers
+    #get the node sequence from the .t16 file
+    node_sequence = []
+    for i in range(node_numbers[0],node_numbers[-1]+1):
+        node_sequence.append(t_16_file.node_sequence(i))
     
+    return node_numbers,node_sequence   
+
+
+
+
+#this function performs the task of extracting the element numbers as reference numbers for both the .t16 and .dat files
+def read_dat_element_number(dat_file,t_16_file,start_row):
+    import pandas as pd
+    t_16_file.moveto(1)
+    datf  = pd.read_csv(dat_file,header=None, names=list(range(27)), skipinitialspace=True, sep=' ', keep_default_na=False)
+    #determine location of element ID data
+    start_row  = datf.index[datf.iloc[:,3] == start_row][0] + 3 #determine row position with tracking surface nodes using membrane's name
+    n_rows = 1   #only 1 row is needed get element numbers since they are given as a range
+    #get element data
+    nodef  = pd.read_csv(dat_file,header=None, skiprows= range(start_row), nrows = n_rows, skipinitialspace=True, sep=' ', keep_default_na=False)
+    elem_range = nodef.values.tolist()
+    element_sequence = [t_16_file.element_sequence(i) for i in range(elem_range[0][0],elem_range[0][2]+1)]
+
+    return element_sequence   
+
+
+
+
+def get_node_position(t_16_file,node_sequence,time_steps,n_dimensions):
+    #'get_node_position' function extracts all information regarding the nodal positions and displacements for all time steps
+    import numpy as np
+
+    if type(time_steps) == int:
+        n_steps = 1
+        time_steps = [time_steps-1]
+    else:
+        n_steps = len(time_steps)
+
+    node_coor = np.zeros([n_steps,len(node_sequence),n_dimensions])
+    node_disp = np.zeros([n_steps,len(node_sequence),n_dimensions])
+
+    n_nodes = len(node_sequence)
+    n_nodes_range = range(n_nodes)
+    t_16_file.moveto(1)
+
+    for node in range(n_nodes):
+        Node_info = str(t_16_file.node(node_sequence[node])).replace("\n",",").replace(" ","").replace("=",",").split(",")
+        node_coor[0,node,0] = Node_info[2] # x locations
+        node_coor[0,node,1] = Node_info[4] # y locations
+        node_coor[0,node,2] = Node_info[6] # z locations
+
+    #make sure all node coordinates are the same for all time steps
+    node_coor[:,:,:] = node_coor[0,:,:]
+
+
+    for time_int in range(n_steps):
+        t_16_file.moveto(time_steps[time_int]+1)
+        disp_x = [t_16_file.node_scalar(node_sequence[nod],0) for nod in n_nodes_range] #list geneterated for all x nodes at current time step
+        disp_y = [t_16_file.node_scalar(node_sequence[nod],1) for nod in n_nodes_range] #list geneterated for all y nodes at current time step
+        disp_z = [t_16_file.node_scalar(node_sequence[nod],2) for nod in n_nodes_range] #list geneterated for all z nodes at current time step
+        
+        node_disp[time_int,:,0] = np.array(disp_x)
+        node_disp[time_int,:,1] = np.array(disp_y)
+        node_disp[time_int,:,2] = np.array(disp_z)
+
+    node_coor = node_coor + node_disp
+    return node_coor,node_disp
+
+
+
+def get_element_strain(dat_file,t_16_file,node_tracking_surface,elemt_traking_surface,time_steps):
+    import pandas as pd
+    import numpy as np
+    
+    if type(time_steps) == int:
+        n_steps = 1
+        time_steps = [time_steps-1]
+    else:
+        n_steps = len(time_steps)    
+
+    t_16_file.moveto(1)
+    node_numbers,node_numbers_sequenced = read_dat_node_number(dat_file,t_16_file,node_tracking_surface,'attach')
+    element_numbers_sequenced = read_dat_element_number(dat_file,t_16_file,elemt_traking_surface)   #element information
+
+    node_instances = np.zeros([len(node_numbers),2])
+    node_instances[:,0] = node_numbers
+    for element in element_numbers_sequenced:
+        for i in range(0,4):
+            nn = t_16_file.element_scalar(element,6)[i].id
+            ind = nn - node_numbers[0] - 1
+            node_instances[ind,1] += 1
+
+
+    
+    labels_strain = [6,7,8]   #[min_strain,int_strain,max_strain]   
+    #labels_stress = [15,16,17]#[min_stress,int_stress,max_stress]
+    
+    label = labels_strain
+    node_ID_prin = np.zeros([len(node_numbers),4])
+    node_ID_prin[:,0] = node_numbers
+    
+    avg_min = np.zeros([len(node_numbers),n_steps])
+    avg_int = np.zeros([len(node_numbers),n_steps])
+    avg_max = np.zeros([len(node_numbers),n_steps])
+    
+    for time_int in range(n_steps):
+        t_16_file.moveto(time_steps[time_int]+1)
+        for prin_ind in range(0,3): 
+            for element in element_numbers_sequenced:
+                for i in range(0,4):
+                    nn = t_16_file.element_scalar(element,label[prin_ind])[i].id
+                    ind = nn - node_numbers[0] - 1
+                    node_ID_prin[ind,prin_ind+1] += t_16_file.element_scalar(element,label[prin_ind])[i].value
+
+        #This accounts for the occurances of each node regarding reacurance since a reacuring node is added to the
+        #the total sum. An average is taken by the following equation average = [x]/len(x)
+        node_ID_prin[:,1] = node_ID_prin[:,1]/node_instances[:,1]   
+        node_ID_prin[:,2] = node_ID_prin[:,2]/node_instances[:,1]   
+        node_ID_prin[:,3] = node_ID_prin[:,3]/node_instances[:,1]   
+
+        avg_min[:,time_int] = node_ID_prin[:,1]
+        avg_int[:,time_int] = node_ID_prin[:,2]
+        avg_max[:,time_int] = node_ID_prin[:,3]
+    
+    return node_numbers, avg_min, avg_int,avg_max
+
+
+
+def get_element_stress(dat_file,t_16_file,node_tracking_surface,elemt_traking_surface,time_steps):
+    import pandas as pd
+    import numpy as np
+    
+    if type(time_steps) == int:
+        n_steps = 1
+        time_steps = [time_steps-1]
+    else:
+        n_steps = len(time_steps)
+
+    t_16_file.moveto(1)
+    node_numbers,node_numbers_sequenced = read_dat_node_number(dat_file,t_16_file,node_tracking_surface,'attach')
+    element_numbers_sequenced = read_dat_element_number(dat_file,t_16_file,elemt_traking_surface)   #element information
+
+    node_instances = np.zeros([len(node_numbers),2])
+    node_instances[:,0] = node_numbers
+    for element in element_numbers_sequenced:
+        for i in range(0,4):
+            nn = t_16_file.element_scalar(element,6)[i].id
+            ind = nn - node_numbers[0] - 1
+            node_instances[ind,1] += 1
+
+
+    
+    #labels_strain = [6,7,8]   #[min_strain,int_strain,max_strain]   
+    labels_stress = [15,16,17]#[min_stress,int_stress,max_stress]
+    
+    label = labels_stress
+    node_ID_prin = np.zeros([len(node_numbers),4])
+    node_ID_prin[:,0] = node_numbers
+    
+    avg_min = np.zeros([len(node_numbers),n_steps])
+    avg_int = np.zeros([len(node_numbers),n_steps])
+    avg_max = np.zeros([len(node_numbers),n_steps])
+    
+    for time_int in range(n_steps):
+        t_16_file.moveto(time_steps[time_int]+1)
+        for prin_ind in range(0,3): 
+            for element in element_numbers_sequenced:
+                for i in range(0,4):
+                    nn = t_16_file.element_scalar(element,label[prin_ind])[i].id
+                    ind = nn - node_numbers[0] - 1
+                    node_ID_prin[ind,prin_ind+1] += t_16_file.element_scalar(element,label[prin_ind])[i].value
+
+        #This accounts for the occurances of each node regarding reacurance since a reacuring node is added to the
+        #the total sum. An average is taken by the following equation average = [x]/len(x)
+        node_ID_prin[:,1] = node_ID_prin[:,1]/node_instances[:,1]   
+        node_ID_prin[:,2] = node_ID_prin[:,2]/node_instances[:,1]   
+        node_ID_prin[:,3] = node_ID_prin[:,3]/node_instances[:,1]   
+
+        avg_min[:,time_int] = node_ID_prin[:,1]
+        avg_int[:,time_int] = node_ID_prin[:,2]
+        avg_max[:,time_int] = node_ID_prin[:,3]
+    # calculate the average von mises stress for all nodes
+    vm_stress = np.sqrt(((avg_max - avg_min)**2 + (avg_max - avg_int)**2 + (avg_min - avg_int)**2)/2)
+    return node_numbers, avg_min, avg_int, avg_max, vm_stress
+
+
+
+def rbf_interp(fem_coords,exp_coords,data,interp_direc):
+    import scipy.interpolate as sp
+    from code_settings import pipeline_files
+    pf = pipeline_files()
+    interp_method = pf.interp_method 
+    
+    if (interp_direc == 0):
+        ref_coords = fem_coords 
+        int_coords = exp_coords
+        interpolated_data = np.zeros(int_coords.shape)
+
+    else:
+        ref_coords = exp_coords 
+        int_coords = fem_coords
+        interpolated_data = np.zeros(int_coords.shape)
+        
+
+    for i in range(ref_coords.shape[0]):
+
+        rbfi_x = sp.Rbf(ref_coords[i,:,0],ref_coords[i,:,1],ref_coords[i,:,2],data[i,:,0],method = interp_method)
+        rbfi_y = sp.Rbf(ref_coords[i,:,0],ref_coords[i,:,1],ref_coords[i,:,2],data[i,:,1],method = interp_method)
+        rbfi_z = sp.Rbf(ref_coords[i,:,0],ref_coords[i,:,1],ref_coords[i,:,2],data[i,:,2],method = interp_method)
+
+        interpolated_data[i,:,0] = rbfi_x(int_coords[i,:,0],int_coords[i,:,1],int_coords[i,:,2])
+        interpolated_data[i,:,1] = rbfi_y(int_coords[i,:,0],int_coords[i,:,1],int_coords[i,:,2])
+        interpolated_data[i,:,2] = rbfi_z(int_coords[i,:,0],int_coords[i,:,1],int_coords[i,:,2])
+        
+    return interpolated_data 
