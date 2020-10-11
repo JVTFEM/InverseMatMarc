@@ -158,24 +158,18 @@ def RBF_int(fname1, fname2, fname3, fname4, fnamef, fnamee, G):
     fem_coor_int = np.empty([len(y_disp_load),len(nn_num),len(dimension)])
     fem_disp_int = np.empty([len(y_disp_load),len(nn_num),len(dimension)])
 
-    ind = [y_disp_load_fem[i] == y_disp_load[i] for i in range(len(y_disp_load))]
-    ind_nt = [not(item) for item in ind]
-    fem_coor_int[ind,:,:] = fem_coor[ind,:,:]
-    fem_disp_int[ind,:,:] = fem_disp[ind,:,:]
-    test_fem = np.where(ind_nt)
-
     # // At the levels which were zero the data are now linearly interpolated. The closest two levels from the NUM data are used as the 
     # bounds and the EXP level is the value in between the bound to interpolate to. All the coordinates, displacements, stress and strain
     # data are interpolated to the level for each NUM node
-    for i in range(fem_coor.shape[1]):
+    for i in range(fem_coor_int.shape[1]):
         
-        fem_coor_int[:,i,0] = sp.interp1d(y_disp_load, fem_coor[:,i,0])(y_disp_load_fem)
-        fem_coor_int[:,i,1] = sp.interp1d(y_disp_load, fem_coor[:,i,1])(y_disp_load_fem)
-        fem_coor_int[:,i,2] = sp.interp1d(y_disp_load, fem_coor[:,i,2])(y_disp_load_fem)
+        fem_coor_int[:,i,0] = sp.interp1d(y_disp_load_fem, fem_coor[:,i,0])(y_disp_load)
+        fem_coor_int[:,i,1] = sp.interp1d(y_disp_load_fem, fem_coor[:,i,1])(y_disp_load)
+        fem_coor_int[:,i,2] = sp.interp1d(y_disp_load_fem, fem_coor[:,i,2])(y_disp_load)
         
-        fem_disp_int[:,i,0] = sp.interp1d(y_disp_load, fem_disp[:,i,0])(y_disp_load_fem)
-        fem_disp_int[:,i,1] = sp.interp1d(y_disp_load, fem_disp[:,i,1])(y_disp_load_fem)
-        fem_disp_int[:,i,2] = sp.interp1d(y_disp_load, fem_disp[:,i,2])(y_disp_load_fem)
+        fem_disp_int[:,i,0] = sp.interp1d(y_disp_load_fem, fem_disp[:,i,0])(y_disp_load)
+        fem_disp_int[:,i,1] = sp.interp1d(y_disp_load_fem, fem_disp[:,i,1])(y_disp_load)
+        fem_disp_int[:,i,2] = sp.interp1d(y_disp_load_fem, fem_disp[:,i,2])(y_disp_load)
         
     # The rbf_interp function below interpolates data passed to it so that the experimental and fem data sets are interpolated to have the same
     # number of entries, this allows for direct comparison 
